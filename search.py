@@ -68,6 +68,10 @@ class DB(object):
 				round(random.uniform(-180,180),7)]
 			data.append(place)
 
+		with open('places.csv', 'w') as csvfile:
+			f = csv.writer(csvfile)
+			f.writerows(data)
+
 
 	def generate_gauss_places(self,nrows):
 	 	"""simulate dense population data points around lat=42, lon=12"""

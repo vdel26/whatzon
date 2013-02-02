@@ -18,29 +18,26 @@ class DB(object):
 
 	def search_nearby1(self,mylat,mylon,dist):
 		"""return ids of users within dist meters"""
-		lat = math.radians(mylat)
-		lon = math.radians(mylon)
-		stmt = "SELECT id, 6371 * 2 * ASIN(SQRT(POWER(SIN(RADIANS(42 - ABS(locations.lat))), 2) \
-			+ COS(RADIANS(42)) * COS(RADIANS(ABS(locations.lat))) * POWER(SIN(RADIANS(12 - locations.lon)), 2))) \
-			AS distance FROM locations HAVING distance < 0.5 ORDER BY distance;"
+		stmt = "SELECT id, 6371 * 2 * ASIN(SQRT(POWER(SIN(RADIANS(%(0)f - ABS(locations.lat))), 2) \
+			+ COS(RADIANS(%(0)f)) * COS(RADIANS(ABS(locations.lat))) * POWER(SIN(RADIANS(%(1)f - locations.lon)), 2))) \
+			AS distance FROM locations HAVING distance < %(2)f ORDER BY distance;" %{'0':mylat, '1':mylon, '2':dist}
 		self.cursor.execute(stmt)
 		return self.cursor.fetchall()
 
 
 	def search_nearby2(self,mylat,mylon,dist):
 		"""return ids of users within dist meters"""
-		lat = math.radians(mylat)
-		lon = math.radians(mylon)
+		lon1 = mylon - dist / math.fabs(math.cos(math.radians(mylat))*111.04)
+		lon2 = mylon + dist / math.fabs(math.cos(math.radians(mylat))*111.04)
 
-		lon1 = lon - dist / math.fabs(math.cos(lat)*111.04)
-		lon2 = lon + dist / math.fabs(math.cos(lat)*111.04)
+		lat1 = mylat - dist / (111.04)
+		lat2 = mylat + dist / (111.04)
 
-		lat1 = lat – dist / (111.04)
-		lat2 = lat + dist / (111.04)
-
-		stmt = "SELECT id, 6371 * 2 * ASIN(SQRT(POWER(SIN(RADIANS(42 - ABS(locations.lat))), 2) \
-			+ COS(RADIANS(42)) * COS(RADIANS(ABS(locations.lat))) * POWER(SIN(RADIANS(12 - locations.lon)), 2))) \
-			AS distance FROM locations HAVING distance < 0.5 ORDER BY distance;"
+		stmt = "SELECT id, 6371 * 2 * ASIN(SQRT(POWER(SIN(RADIANS(%(0)f - ABS(locations.lat))), 2) \
+		 + COS(RADIANS(%(0)f)) * COS(RADIANS(ABS(locations.lat))) * POWER(SIN(RADIANS(%(1)f - locations.lon)), 2))) \
+		 AS distance FROM locations WHERE locations.lat BETWEEN %(5)f AND %(6)f \
+		 AND locations.lon BETWEEN %(3)f AND %(4)f HAVING distance < %(2)f \
+		 ORDER BY distance;" %{'0':mylat, '1':mylon, '2':dist, '3':lon1, '4':lon2, '5':lat1, '6':lat2}
 		self.cursor.execute(stmt)
 		return self.cursor.fetchall()
 
@@ -49,9 +46,9 @@ class DB(object):
 		"""return ids of users within dist meters"""
 		lat = math.radians(mylat)
 		lon = math.radians(mylon)
-		stmt = "SELECT id, 6371 * 2 * ASIN(SQRT(POWER(SIN(RADIANS(42 - ABS(locations.lat))), 2) \
-			+ COS(RADIANS(42)) * COS(RADIANS(ABS(locations.lat))) * POWER(SIN(RADIANS(12 - locations.lon)), 2))) \
-			AS distance FROM locations HAVING distance < 0.5 ORDER BY distance;"
+		stmt = "SELECT id, 6371 * 2 * ASIN(SQRT(POWER(SIN(RADIANS(%(0)f - ABS(locations.lat))), 2) \
+			+ COS(RADIANS(%(0)f)) * COS(RADIANS(ABS(locations.lat))) * POWER(SIN(RADIANS(%(1)f - locations.lon)), 2))) \
+			AS distance FROM locations HAVING distance < %(2)f ORDER BY distance;" %{'0':lat, '1':lon, '2':dist}
 		self.cursor.execute(stmt)
 		return self.cursor.fetchall()
 
@@ -91,4 +88,4 @@ class DB(object):
 
 
 if __name__ == '__main__':
-	DB()
+	print "import as module and instatiate DB object."

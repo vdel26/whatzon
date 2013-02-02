@@ -6,7 +6,7 @@ class DB(object):
 	def __init__(self):
 		"""connect to local mysql"""
 		self.db = MySQLdb.connect(host="localhost", port=8889, 
-			user="root", passwd="root", db="places")
+			user="root", passwd="root", db="places", local_infile = 1)
 		self.cursor = self.db.cursor()	
 	
 
@@ -44,11 +44,18 @@ class DB(object):
 
 	def search_nearby3(self,mylat,mylon,dist):
 		"""return ids of users within dist meters"""
-		lat = math.radians(mylat)
-		lon = math.radians(mylon)
-		stmt = "SELECT id, 6371 * 2 * ASIN(SQRT(POWER(SIN(RADIANS(%(0)f - ABS(locations.lat))), 2) \
-			+ COS(RADIANS(%(0)f)) * COS(RADIANS(ABS(locations.lat))) * POWER(SIN(RADIANS(%(1)f - locations.lon)), 2))) \
-			AS distance FROM locations HAVING distance < %(2)f ORDER BY distance;" %{'0':lat, '1':lon, '2':dist}
+		lon1 = mylon - dist / math.fabs(math.cos(math.radians(mylat))*111.04)
+		lon2 = mylon + dist / math.fabs(math.cos(math.radians(mylat))*111.04)
+
+		lat1 = mylat - dist / (111.04)
+		lat2 = mylat + dist / (111.04)
+		stmt = "SET @bbox = 'POLYGON((%(2)f %(0)f, %(2)f %(1)f, %(3)f %(1)f, %(3)f %(0)f, \
+			%(2)f %(0)f))'" %{'0':lon1, '1':lon2, '2':lat1, '3':lat2} 
+		self.cursor.execute(stmt)
+
+		stmt = "SELECT id, distance(locations.position, POINT(%f, %f)) AS cdist \
+		FROM locations WHERE INTERSECTS(locations.position, PolygonFromText(@bbox)) \
+		HAVING cdist < %f ORDER BY cdist;" %{mylat, mylon, dist}
 		self.cursor.execute(stmt)
 		return self.cursor.fetchall()
 
